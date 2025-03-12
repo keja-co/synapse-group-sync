@@ -19,6 +19,8 @@ This service synchronizes **IDP user groups** with **Matrix rooms** using:
 
 ## 🔧 Installation & Setup
 
+**NOTE:** If using a room alias (i.e. `#general:example.com` instead of `!abc123:example.com`), replace the `#` with `%23`.
+
 To be added...
 
 ## 🚀 Deployment
