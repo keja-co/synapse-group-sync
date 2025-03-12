@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
 import requests
-from utils import bcolors, verify_secret, get_user_groups, get_matrix_user, get_user, get_user_id
+from utils import bcolors, verify_secret, get_user_groups, get_matrix_user, get_user, get_user_id, ensure_room_admin
 from config import MATRIX_ADMIN_TOKEN, MATRIX_URL, MATRIX_SERVER_NAME, IDP_GROUP_TO_ROOM, WEBHOOK_SECRET, LOG_LEVEL, \
     MATRIX_ADMIN_USER_ID
 
@@ -46,30 +46,7 @@ async def matrix_sync(request: Request):
     for group, rooms in IDP_GROUP_TO_ROOM.items():
         if group in user_groups:
             for room_id in rooms:
-
-                print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} Checking if {matrix_user} is in {room_id}.")
-                print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} Adding {MATRIX_ADMIN_USER_ID} to {room_id}.")
-
-                # Check if this admin user is already in the room, if not join it and become room admin
-                matrix_admin_response = requests.post(
-                    f"{MATRIX_URL}/_synapse/admin/v1/rooms/{room_id}/make_room_admin",
-                    headers=headers,
-                    json={"user_id": MATRIX_ADMIN_USER_ID}
-                )
-
-                print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} {matrix_admin_response.json()}")
-
-                # Attempt to accept the invite for the admin user
-                print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} Accepting invite for {MATRIX_ADMIN_USER_ID} in {room_id}.")
-                matrix_admin2_response = requests.post(
-                    f"{MATRIX_URL}/_synapse/admin/v1/join/{room_id}",
-                    headers=headers,
-                    json={"user_id": MATRIX_ADMIN_USER_ID}
-                )
-                print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} {matrix_admin2_response.json()}")
-                print(matrix_admin2_response.request.body)
-                print(matrix_admin2_response.request.headers)
-                print(matrix_admin2_response.request.url)
+                ensure_room_admin(room_id)
 
                 print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} Adding {matrix_user} to {room_id}.")
 
