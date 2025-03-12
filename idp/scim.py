@@ -1,12 +1,8 @@
-# /scim/v2/Users
-# /scim/v2/Users/{user_id}
-# /scim/v2/Groups
-# /scim/v2/Groups/{group_id}
-
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Literal, Dict, Any
+from utilities import auth
 
 # SCIM Patch operation model
 class PatchOperation(BaseModel):
@@ -23,7 +19,9 @@ SCIM_GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group"
 router = APIRouter()
 
 @router.get("/ServiceProviderConfig", tags=["SCIM"])
-async def service_provider_config():
+async def service_provider_config(
+    token: str = Depends(auth.verify_token)
+):
     return JSONResponse(
         content={
             "schemas": ["urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"],
@@ -44,7 +42,8 @@ async def service_provider_config():
 @router.patch("/Groups/{group_id}", tags=["SCIM"])
 async def modify_group_users(
     group_id: str = Path(..., title="Group ID"),
-    patch_request: SCIMPatchRequest = None
+    patch_request: SCIMPatchRequest = None,
+    token: str = Depends(auth.verify_token)
 ):
     # Validate SCIM Schema
     if SCIM_GROUP_SCHEMA not in patch_request.schemas:
