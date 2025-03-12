@@ -118,7 +118,18 @@ def make_room_admin(headers, room_id, matrix_user):
 
     # Attempt to accept the invite for the admin user
     if matrix_admin_response.status_code == 200:
-        log(LogLevel.INFO, f"{MATRIX_ADMIN_USER_ID} is now an admin of {room_id}.")
+
+        # Join the room
+        matrix_join_response = requests.post(
+            f"{MATRIX_URL}/_matrix/client/v3/join/{room_id}",
+            headers=headers
+        )
+
+        if matrix_join_response.status_code == 200:
+            log(LogLevel.INFO, f"{MATRIX_ADMIN_USER_ID} is now an admin of {room_id}.")
+        else:
+            log(LogLevel.ERROR, f"Failed to join admin to {room_id}.")
+            log(LogLevel.DEBUG, f"{matrix_join_response.status_code}: {matrix_join_response.text}")
     else:
         log(LogLevel.ERROR, f"Failed to make {MATRIX_ADMIN_USER_ID} an admin of {room_id}.")
         log(LogLevel.DEBUG, f"{matrix_admin_response.status_code}: {matrix_admin_response.text}")
