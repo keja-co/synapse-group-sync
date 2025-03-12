@@ -8,9 +8,11 @@
 
 This service synchronizes **IDP user groups** with **Matrix rooms** using:
 
-- **Webhook Sync:** Updates rooms in real-time based on IDP events
-- **Scheduled Sync Job:** Periodically updates all users in the background (in case of missed events)
-- **Efficient Group Tracking:** Only updates users who changed groups since the last sync (for Scheduled Sync)
+- **SCIM Sync:** Updates users in real-time based on IDP events
+
+[//]: # (- **Webhook Sync:** Updates rooms in real-time based on IDP events)
+[//]: # (- **Scheduled Sync Job:** Periodically updates all users in the background &#40;in case of missed events&#41;)
+[//]: # (- **Efficient Group Tracking:** Only updates users who changed groups since the last sync &#40;for Scheduled Sync&#41;)
 
 ## 📌 Features
 
@@ -52,12 +54,6 @@ uvicorn main:app --reload
 
 ## ❓ FAQ
 
-**Q:** Why use this over SCIM or OIDC Claims?
-
-**A:** There's currently no open source SCIM sync for Matrix, and similarly for OIDC claims. To be brutally honest: I
-don't understand the SCIM or OIDC protocols well enough to be confident in implementing it. I do however know webhooks
-well enough - hence this project! However, that's **not** to say that won't ever happen - and I may end up adding SCIM
-support onto this!
 
 ## 📜 License
 
