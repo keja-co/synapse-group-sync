@@ -22,7 +22,7 @@ router = APIRouter()
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    log(LogLevel.ERROR, f"Validation error:\n{exc}")
+    log(LogLevel.ERROR, f"Validation error:\n{exc}\nFor Request:\n{request}\n")
     return JSONResponse(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, content={"error": "Validation error"})
 
 
