@@ -35,3 +35,6 @@ AUTHENTIK_API_URL=os.environ.get("AUTHENTIK_API_URL")
 AUTHENTIK_TOKEN=os.environ.get("AUTHENTIK_TOKEN")
 
 IDP_GROUP_TO_ROOM=json.loads(os.environ.get("IDP_GROUP_TO_ROOM", "{}"))
+IDP_NAME=os.environ.get("IDP_NAME")
+if not IDP_NAME:
+    raise RuntimeError("IDP_NAME environment variable is not set")

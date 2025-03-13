@@ -9,6 +9,7 @@ from typing import List, Literal, Dict, Any, Optional
 from config import DATA_DIR
 from utilities import auth
 from utils import log, LogLevel
+from scim import handle_user
 
 # SCIM Schemas
 SCIM_USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User"
@@ -152,12 +153,13 @@ async def service_provider_config():
 @router.post("/Users")
 async def create_user(user: SCIMUser, token: str = Depends(auth.verify_token)):
 
-    log(LogLevel.DEBUG, f"User created: {user.model_dump()}")
+    log(LogLevel.DEBUG, f"Attempting to Create User with: {user.model_dump()}")
     log(LogLevel.INFO, f"SCIM User POST: {user.userName}")
 
     db_create_user(user)
+    matrix_id = handle_user.post(user.externalId, user.displayName, user.emails[0].value)
 
-    return JSONResponse(status_code=201, content={"id": user.externalId, **user.model_dump()})
+    return JSONResponse(status_code=201, content={"id": matrix_id, **user.model_dump()})
 
 
 # Get User
@@ -178,15 +180,16 @@ async def update_user(user_id: str, update_data: SCIMUserUpdate, token: str = De
     log(LogLevel.INFO, f"SCIM User PUT: {user_id}")
 
     db_update_user(user_id, update_data)
+    handle_user.put(user_id, update_data.externalId, update_data.displayName, update_data.emails[0].value)
 
     return JSONResponse(status_code=200, content={"id": update_data.externalId, **update_data.model_dump()})
 
 
-@router.delete("/Users/{user_id}")
-async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
-
-    log(LogLevel.INFO, f"User removed: {user_id}")
-    return JSONResponse(status_code=204, content={})
+# @router.delete("/Users/{user_id}")
+# async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
+#
+#     log(LogLevel.INFO, f"User removed: {user_id}")
+#     return JSONResponse(status_code=204, content={})
 
 
 # Create Group
@@ -223,9 +226,9 @@ async def update_group(group_id: str, update_data: SCIMGroupUpdate, token: str =
     return JSONResponse(status_code=200, content={"id": update_data.externalId, **update_data.model_dump()})
 
 
-# Delete Group
-@router.delete("/Groups/{group_id}")
-async def delete_group(group_id: str, token: str = Depends(auth.verify_token)):
-
-    log(LogLevel.INFO, f"Group deleted: {group_id}")
-    return JSONResponse(status_code=204, content={})
+# # Delete Group
+# @router.delete("/Groups/{group_id}")
+# async def delete_group(group_id: str, token: str = Depends(auth.verify_token)):
+#
+#     log(LogLevel.INFO, f"Group deleted: {group_id}")
+#     return JSONResponse(status_code=204, content={})

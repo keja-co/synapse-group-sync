@@ -1,11 +1,11 @@
-from fastapi import FastAPI, APIRouter, Request, Depends, status
+from fastapi import FastAPI, APIRouter, Request, status
 from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
 
 from utils import bcolors, LogLevel, log
 from config import IDP_GROUP_TO_ROOM
 
-from idp import scim
+import scim.main
 import webhook
 
 print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} Starting Synapse Group Sync")
@@ -38,4 +38,4 @@ async def health():
 
 app.include_router(router)
 app.include_router(webhook.router)
-app.include_router(scim.router, prefix="/scim/v2")
+app.include_router(scim.main.router, prefix="/scim/v2")
