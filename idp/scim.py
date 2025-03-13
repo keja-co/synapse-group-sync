@@ -37,10 +37,13 @@ class SCIMUser(BaseModel):
 
 
 class SCIMUserUpdate(BaseModel):
-    schemas: List[str] = [SCIM_USER_SCHEMA]
-    active: Optional[bool] = None
-    name: Optional[Dict[str, str]] = None
-    emails: Optional[List[Dict[str, str]]] = None
+    schemas: List[str] = Field(default=[SCIM_USER_SCHEMA])
+    userName: Optional[str] = Field(None, title="Unique identifier for the user")
+    name: Optional[SCIMName] = Field(None, title="User's name")
+    displayName: Optional[str] = Field(None, title="User's display name")
+    emails: Optional[List[SCIMEmail]] = Field(None, title="User's email addresses")
+    active: Optional[bool] = Field(None, title="User active status")
+    externalId: Optional[str] = Field(None, title="External identifier for the user")
 
 
 class SCIMGroup(BaseModel):
@@ -49,6 +52,11 @@ class SCIMGroup(BaseModel):
     members: Optional[List[Dict[str, str]]] = None
     externalId: Optional[str] = Field(None, title="External identifier for the group")
 
+class SCIMGroupUpdate(BaseModel):
+    schemas: List[str] = [SCIM_GROUP_SCHEMA]
+    displayName: Optional[str] = Field(None, title="Group's display name")
+    members: Optional[List[Dict[str, str]]] = None
+    externalId: Optional[str] = Field(None, title="External identifier for the group")
 
 # class PatchOperation(BaseModel):
 #     op: str
@@ -126,11 +134,11 @@ async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)
 
 # PUT Group
 @router.put("/Groups/{groupId}")
-async def update_group(group_id: str, group: SCIMGroup, token: str = Depends(auth.verify_token)):
+async def update_group(group_id: str, update_data: SCIMGroupUpdate, token: str = Depends(auth.verify_token)):
     ### Code To Run ###
-    log(LogLevel.DEBUG, f"Group updated: {group_id} -> {group.model_dump()}")
-    log(LogLevel.INFO, f"SCIM Group PUT: {group.displayName}")
-    return JSONResponse(status_code=200, content={"id": group.externalId, **group.model_dump()})
+    log(LogLevel.DEBUG, f"Group updated: {group_id} -> {update_data.model_dump()}")
+    log(LogLevel.INFO, f"SCIM Group PUT: {update_data.displayName}")
+    return JSONResponse(status_code=200, content={"id": update_data.externalId, **update_data.model_dump()})
 
 # # Update Group Membership
 # @router.patch("/Groups/{group_id}", tags=["SCIM"])
