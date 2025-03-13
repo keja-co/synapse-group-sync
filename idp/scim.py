@@ -108,20 +108,12 @@ async def create_user(user: SCIMUser, token: str = Depends(auth.verify_token)):
 
 
 # Update User
-# @router.put("/Users/{userId}")
-# async def update_user(user_id: str, update_data: SCIMUserUpdate, token: str = Depends(auth.verify_token)):
-#     ### Code To Run ###
-#     log(LogLevel.DEBUG, f"User updated: {user_id} -> {update_data.model_dump()}")
-#     log(LogLevel.INFO, f"SCIM User PUT: {user_id}")
-#     return {update_data}
-
-# Debug Update User
-@router.put("/Users/{userId}")
-async def update_user(user_id: str, request: Request, token: str = Depends(auth.verify_token)):
-    update_data = await request.body()
+@router.put("/Users/{user_id}")
+async def update_user(user_id: str, update_data: SCIMUserUpdate, token: str = Depends(auth.verify_token)):
+    ### Code To Run ###
+    log(LogLevel.DEBUG, f"User updated: {user_id} -> {update_data.model_dump()}")
     log(LogLevel.INFO, f"SCIM User PUT: {user_id}")
-    log(LogLevel.INFO, f"SCIM User PUT: {update_data}")
-    return JSONResponse(status_code=200, content={})
+    return {update_data}
 
 @router.delete("/Users/{userId}")
 async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
@@ -140,20 +132,12 @@ async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)
 
 
 # PUT Group
-# @router.put("/Groups/{groupId}")
-# async def update_group(group_id: str, update_data: SCIMGroupUpdate, token: str = Depends(auth.verify_token)):
-#     ### Code To Run ###
-#     log(LogLevel.DEBUG, f"Group updated: {group_id} -> {update_data.model_dump()}")
-#     log(LogLevel.INFO, f"SCIM Group PUT: {update_data.displayName}")
-#     return JSONResponse(status_code=200, content={"id": update_data.externalId, **update_data.model_dump()})
-
-# Debug Update Group
-@router.put("/Groups/{groupId}")
-async def update_group(group_id: str, request: Request, token: str = Depends(auth.verify_token)):
-    update_data = await request.body()
-    log(LogLevel.INFO, f"SCIM Group PUT: {group_id}")
-    log(LogLevel.INFO, f"SCIM Group PUT: {update_data}")
-    return JSONResponse(status_code=200, content={})
+@router.put("/Groups/{group_id}")
+async def update_group(group_id: str, update_data: SCIMGroupUpdate, token: str = Depends(auth.verify_token)):
+    ### Code To Run ###
+    log(LogLevel.DEBUG, f"Group updated: {group_id} -> {update_data.model_dump()}")
+    log(LogLevel.INFO, f"SCIM Group PUT: {update_data.displayName}")
+    return JSONResponse(status_code=200, content={"id": update_data.externalId, **update_data.model_dump()})
 
 # # Update Group Membership
 # @router.patch("/Groups/{group_id}", tags=["SCIM"])
