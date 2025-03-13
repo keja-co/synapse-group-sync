@@ -125,7 +125,8 @@ async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
 # Debug log group scim request
 @router.post("/Groups")
 async def create_group(request: Request, token: str = Depends(auth.verify_token)):
-    log(LogLevel.INFO, f"Group created: \n{request.body}")
+    body = await request.json()
+    log(LogLevel.INFO, f"Group created: \n{body}")
     return JSONResponse(status_code=201, content="testing")
 
 # Update Group Membership
