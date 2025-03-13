@@ -6,8 +6,8 @@ services:
       - 3016:5000
     env_file: ".env"
     restart: unless-stopped
-  volumes:
-    - data:/data
+    volumes:
+      - data:/data
 
 volumes:
   data:
