@@ -1,8 +1,10 @@
-# Matrix Sync Service
+# Matrix Synapse SCIM
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-Framework-green)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
+
+**Note:** This relies heavily on Synapse Admin APIs. This will **not** work with other home servers.
 
 ## 🚀 Overview
 
