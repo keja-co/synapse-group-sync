@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Path, Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Literal, Dict, Any, Optional
 from utilities import auth
 from utils import log, LogLevel
@@ -11,12 +11,12 @@ SCIM_GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group"
 
 # Models
 class SCIMUser(BaseModel):
-    schemas: List[str] = [SCIM_USER_SCHEMA]
-    userName: str
-    name: Dict[str, str]
-    emails: List[Dict[str, str]]
-    active: bool = True
-    externalId: Optional[str] = None
+    schemas: List[str] = Field(default=[SCIM_USER_SCHEMA])
+    userName: str = Field(..., title="Unique identifier for the user")
+    name: Dict[str, str] = Field(..., title="User's name details")
+    emails: List[Dict[str, str]] = Field(..., title="User's email addresses")
+    active: bool = Field(default=True, title="User active status")
+    externalId: Optional[str] = Field(None, title="External identifier for the user")
 
 class SCIMUserUpdate(BaseModel):
     schemas: List[str] = [SCIM_USER_SCHEMA]
@@ -52,7 +52,16 @@ async def service_provider_config():
             "changePassword": {"supported": False},
             "sort": {"supported": False},
             "etag": {"supported": False},
-            "authenticationSchemes": [],
+            "authenticationSchemes": [
+                {
+                    "name": "Bearer",
+                    "description": "Authentication Scheme using the Bearer Token Standard",
+                    "specUri": "http://www.rfc-editor.org/info/rfc6750",
+                    "documentationUri": "http://www.rfc-editor.org/info/rfc6750",
+                    "type": "oauthbearertoken",
+                    "primary": True
+                }
+            ],
             "meta": {"resourceType": "ServiceProviderConfig", "location": "/ServiceProviderConfig"}
         }
     )
@@ -61,29 +70,33 @@ async def service_provider_config():
 @router.post("/Users")
 async def create_user(user: SCIMUser, token: str = Depends(auth.verify_token)):
     ### Code To Run ###
-    log(LogLevel.INFO, "User created: {user}")
-    return JSONResponse(status_code=201, content=user)
+    try:
+        log(LogLevel.INFO, f"User created: {user.model_dump()}")
+        return JSONResponse(status_code=201, content=user.model_dump())
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error creating user: {e}")
+        return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
 
 # Update User
 @router.put("/Users/{userId}")
 async def update_user(user_id: str, update_data: SCIMUserUpdate, token: str = Depends(auth.verify_token)):
     ### Code To Run ###
-    log(LogLevel.INFO, "User updated: {user_id} -> {update_data}")
+    log(LogLevel.INFO, f"User updated: {user_id} -> {update_data.model_dump()}")
     return {update_data}
 
 
 @router.delete("/Users/{userId}")
 async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
     ### Code To Run ###
-    log(LogLevel.INFO, "User removed: {user_id}")
+    log(LogLevel.INFO, f"User removed: {user_id}")
     return JSONResponse(status_code=204, content={})
 
 # Create Group
 @router.post("/Groups")
 async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)):
     ### Code To Run ###
-    log(LogLevel.INFO, "Group created: {group}")
-    return JSONResponse(status_code=201, content=group)
+    log(LogLevel.INFO, f"Group created: {group.model_dump()}")
+    return JSONResponse(status_code=201, content=group.model_dump())
 
 # Update Group Membership
 @router.patch("/Groups/{group_id}", tags=["SCIM"])
@@ -107,11 +120,11 @@ async def modify_group_users(
 
             if operation.op == "add":
                 ### Code To Run ###
-                log(LogLevel.INFO, "Adding user {user_id} to group {group_id}")
+                log(LogLevel.INFO, f"Adding user {user_id} to group {group_id}")
 
             elif operation.op == "remove":
                 ### Code To Run ###
-                log(LogLevel.INFO, "Removing user {user_id} from group {group_id}")
+                log(LogLevel.INFO, f"Removing user {user_id} from group {group_id}")
 
             else:
                 raise HTTPException(status_code=400, detail="Unsupported operation")
@@ -122,5 +135,5 @@ async def modify_group_users(
 @router.delete("/Groups/{groupId}")
 async def delete_group(group_id: str, token: str = Depends(auth.verify_token)):
     ### Code To Run ###
-    log(LogLevel.INFO, "Group deleted: {group_id}")
+    log(LogLevel.INFO, f"Group deleted: {group_id}")
     return JSONResponse(status_code=204, content={})
