@@ -4,12 +4,12 @@ import os
 from fastapi import APIRouter, HTTPException, Path, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from typing import List, Literal, Dict, Any, Optional
+from typing import List, Literal, Dict, Any, Optional, Union
 
 from config import DATA_DIR
 from utilities import auth
 from utils import log, LogLevel
-from scim import handle_user
+from scim import handle_user, handle_group
 
 # SCIM Schemas
 SCIM_USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User"
@@ -51,18 +51,21 @@ class SCIMUserUpdate(BaseModel):
     active: Optional[bool] = Field(None, title="User active status")
     externalId: Optional[str] = Field(None, title="External identifier for the user")
 
+class SCIMGroupMember(BaseModel):
+    value: str
+    ref: Optional[str] = Field(None, alias="$ref")
 
 class SCIMGroup(BaseModel):
     schemas: List[str] = [SCIM_GROUP_SCHEMA]
     displayName: str = Field(..., title="Group's display name")
-    members: Optional[List[Dict[str, str]]] = None
+    members: Optional[List[SCIMGroupMember]] = None
     externalId: Optional[str] = Field(None, title="External identifier for the group")
 
 
 class SCIMGroupUpdate(BaseModel):
     schemas: List[str] = [SCIM_GROUP_SCHEMA]
     displayName: Optional[str] = Field(None, title="Group's display name")
-    members: Optional[List[Dict[str, str]]] = None
+    members: Optional[List[SCIMGroupMember]] = None
     externalId: Optional[str] = Field(None, title="External identifier for the group")
 
 # File Stores
@@ -200,6 +203,7 @@ async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)
     log(LogLevel.INFO, f"SCIM Group POST: {group.displayName}")
 
     db_create_group(group)
+    handle_group.process(group)
 
     return JSONResponse(status_code=201, content={"id": group.externalId, **group.model_dump()})
 
@@ -222,6 +226,7 @@ async def update_group(group_id: str, update_data: SCIMGroupUpdate, token: str =
     log(LogLevel.INFO, f"SCIM Group PUT: {update_data.displayName}")
 
     db_update_group(group_id, update_data)
+    handle_group.process(update_data)
 
     return JSONResponse(status_code=200, content={"id": update_data.externalId, **update_data.model_dump()})
 

@@ -2,9 +2,11 @@ import requests
 from fastapi import APIRouter, Request, HTTPException
 
 from config import MATRIX_ADMIN_TOKEN, IDP_GROUP_TO_ROOM, MATRIX_URL, LOG_LEVEL
-from utils import verify_secret, get_user, get_user_id, get_matrix_user, get_user_groups, ensure_room_admin, bcolors
+from utils import verify_secret, get_user, get_user_id, get_matrix_user, get_user_groups, bcolors
+from synapse.room import add_to_room, remove_from_room
 
 router = APIRouter()
+
 
 # Adds a user to a room in Synapse (does not remove users)
 @router.post("/sync/matrix", tags=["sync"])
@@ -21,37 +23,12 @@ async def matrix_sync(request: Request):
     matrix_user = get_matrix_user(user_id)
     user_groups = get_user_groups(user)
 
-    headers = {"Authorization": f"Bearer {MATRIX_ADMIN_TOKEN}"}
-
     # Add User to Rooms
-
     for group, rooms in IDP_GROUP_TO_ROOM.items():
         if group in user_groups:
             for room_id in rooms:
-                ensure_room_admin(room_id)
-
-                print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} Adding {matrix_user} to {room_id}.")
-
-                matrix_response = requests.post(
-                    f"{MATRIX_URL}/_synapse/admin/v1/join/{room_id}",
-                    headers=headers,
-                    json={"user_id": matrix_user}
-                )
-
-                if matrix_response.status_code != 200:
-                    if matrix_response.json()["error"] == f"{matrix_user} is already in the room.":
-                        print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} {matrix_user} is already in the room.")
-                        continue
-
-                    print(f"{bcolors.FAIL}ERROR:{bcolors.ENDC} Error adding {matrix_user} to {room_id}.")
-                    if LOG_LEVEL == "DEBUG":
-                        print(f"{bcolors.FAIL}DEBUG:{bcolors.ENDC} {matrix_response.json()}")
-                    raise HTTPException(status_code=500, detail="Failed to add user to room")
-
-                if matrix_response.status_code == 200:
-                    print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} Added {matrix_user} to {room_id}.")
-
-    return {"status": "success"}
+                status = add_to_room(matrix_user, room_id)
+    return {"status": "processing sync..."}
 
 
 # Removes a user from a room in Synapse
@@ -60,8 +37,6 @@ async def matrix_sync_remove(request: Request):
     data = await request.json()
 
     verify_secret(data.get("secret"))
-
-    user_id = data.get("user", {}).get("username")
 
     user = get_user(data)
     user_id = get_user_id(user)
@@ -75,8 +50,6 @@ async def matrix_sync_remove(request: Request):
 
     if not remove_groups:
         raise HTTPException(status_code=400, detail="No remove_groups provided")
-
-    headers = {"Authorization": f"Bearer {MATRIX_ADMIN_TOKEN}"}
 
     rooms_to_remove = []
     for group, rooms in IDP_GROUP_TO_ROOM.items():
@@ -92,20 +65,6 @@ async def matrix_sync_remove(request: Request):
                     rooms_to_remove.append(room_id)
 
     for room_id in rooms_to_remove:
-        print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} Removing {matrix_user} from {room_id}.")
-        matrix_response = requests.post(
-            f"{MATRIX_URL}/_matrix/client/v3/rooms/{room_id}/kick",
-            json={"user_id": matrix_user, "reason": "Removed from group"},
-            headers=headers
-        )
+        status = remove_from_room(matrix_user, room_id)
 
-        if matrix_response.status_code != 200:
-            print(f"{bcolors.FAIL}ERROR:{bcolors.ENDC} Error removing {matrix_user} from {room_id}.")
-            if LOG_LEVEL == "DEBUG":
-                print(f"{bcolors.FAIL}DEBUG:{bcolors.ENDC} {matrix_response.json()}")
-            raise HTTPException(status_code=500, detail="Failed to remove user from room")
-
-        if matrix_response.status_code == 200:
-            print(f"{bcolors.OKGREEN}INFO:{bcolors.ENDC} Removed {matrix_user} from {room_id}.")
-
-        return {"status": "success"}
+    return {"status": "processing sync..."}
