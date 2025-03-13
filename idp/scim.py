@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Path, Depends
+from fastapi import APIRouter, HTTPException, Path, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import List, Literal, Dict, Any, Optional
@@ -26,7 +26,8 @@ class SCIMUserUpdate(BaseModel):
 
 class SCIMGroup(BaseModel):
     schemas: List[str] = [SCIM_GROUP_SCHEMA]
-    displayName: str
+    id: str = Field(..., title="Unique identifier for the group")
+    displayName: Optional[str] = Field(None, title="Group's display name")
     members: Optional[List[Dict[str, str]]] = None
 
 class PatchOperation(BaseModel):
@@ -68,14 +69,20 @@ async def service_provider_config():
 
 # Create User
 @router.post("/Users")
-async def create_user(user: SCIMUser, token: str = Depends(auth.verify_token)):
-    ### Code To Run ###
-    try:
-        log(LogLevel.INFO, f"User created: {user.model_dump()}")
-        return JSONResponse(status_code=201, content=user.model_dump())
-    except Exception as e:
-        log(LogLevel.ERROR, f"Error creating user: {e}")
-        return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
+# async def create_user(user: SCIMUser, token: str = Depends(auth.verify_token)):
+#     ### Code To Run ###
+#     try:
+#         log(LogLevel.INFO, f"User created: {user.model_dump()}")
+#         return JSONResponse(status_code=201, content=user.model_dump())
+#     except Exception as e:
+#         log(LogLevel.ERROR, f"Error creating user: {e}")
+#         return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
+
+# Temporary debug code
+@router.post("/Users")
+async def create_user(request: Request, token: str = Depends(auth.verify_token)):
+    body = await request.json()
+    log(LogLevel.INFO, f"User created: \n{body}")
 
 # Update User
 @router.put("/Users/{userId}")
