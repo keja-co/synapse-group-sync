@@ -50,15 +50,15 @@ class SCIMGroup(BaseModel):
     externalId: Optional[str] = Field(None, title="External identifier for the group")
 
 
-class PatchOperation(BaseModel):
-    op: str
-    path: Optional[str] = "members"
-    value: Optional[List[Dict[str, Any]]] = None
+# class PatchOperation(BaseModel):
+#     op: str
+#     path: Optional[str] = "members"
+#     value: Optional[List[Dict[str, Any]]] = None
 
 
-class SCIMPatchRequest(BaseModel):
-    schemas: List[str]
-    Operations: List[PatchOperation]
+# class SCIMPatchRequest(BaseModel):
+#     schemas: List[str]
+#     Operations: List[PatchOperation]
 
 
 router = APIRouter()
@@ -69,7 +69,7 @@ async def service_provider_config():
     return JSONResponse(
         content={
             "schemas": ["urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"],
-            "patch": {"supported": True},
+            "patch": {"supported": False},
             "bulk": {"supported": False},
             "filter": {"supported": False},
             "changePassword": {"supported": False},
@@ -124,7 +124,15 @@ async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)
     return JSONResponse(status_code=201, content={"id": group.externalId, **group.model_dump()})
 
 
-# Update Group Membership
+# PUT Group
+@router.put("/Groups/{groupId}")
+async def update_group(group_id: str, group: SCIMGroup, token: str = Depends(auth.verify_token)):
+    ### Code To Run ###
+    log(LogLevel.DEBUG, f"Group updated: {group_id} -> {group.model_dump()}")
+    log(LogLevel.INFO, f"SCIM Group PUT: {group.displayName}")
+    return JSONResponse(status_code=200, content={"id": group.externalId, **group.model_dump()})
+
+# # Update Group Membership
 # @router.patch("/Groups/{group_id}", tags=["SCIM"])
 # async def modify_group_users(
 #         group_id: str = Path(..., title="Group ID"),
@@ -156,14 +164,6 @@ async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)
 #                 raise HTTPException(status_code=400, detail="Unsupported operation")
 #
 #     return {"message": "Group updated successfully"}
-
-# Debug Patch Log (use request.json() to get the data)
-@router.patch("/Groups/{group_id}")
-async def modify_group_users(group_id: str, request: Request, token: str = Depends(auth.verify_token)):
-    data = await request.json()
-    log(LogLevel.INFO, f"SCIM Group PATCH: {group_id}")
-    log(LogLevel.DEBUG, f"Group Patch Request: {data}")
-    return JSONResponse(status_code=204, content={})
 
 
 # Delete Group
