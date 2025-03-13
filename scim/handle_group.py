@@ -19,6 +19,9 @@ def process(group: Union['SCIMGroup', 'SCIMGroupUpdate']):
                 continue
 
             # Add User to Rooms
+            if len(assigned_rooms) == 0:
+                log(LogLevel.DEBUG, f"Group: {group.displayName} ({group.externalId}) has no assigned rooms.")
+                continue
             log(LogLevel.DEBUG, f"Attempting to add {member.value} to rooms: {assigned_rooms}")
             matrix_id = member.value
             add_to_rooms(matrix_id, assigned_rooms)
