@@ -42,9 +42,9 @@ class SCIMUserUpdate(BaseModel):
 
 class SCIMGroup(BaseModel):
     schemas: List[str] = [SCIM_GROUP_SCHEMA]
-    id: str = Field(..., title="Unique identifier for the group")
-    displayName: Optional[str] = Field(None, title="Group's display name")
+    displayName: str = Field(..., title="Group's display name")
     members: Optional[List[Dict[str, str]]] = None
+    externalId: Optional[str] = Field(None, title="External identifier for the group")
 
 
 class PatchOperation(BaseModel):
@@ -115,19 +115,11 @@ async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
 
 
 # Create Group
-# @router.post("/Groups")
-# async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)):
-#     ### Code To Run ###
-#     log(LogLevel.INFO, f"Group created: {group.model_dump()}")
-#     return JSONResponse(status_code=201, content=group.model_dump())
-
-
-# Debug log group scim request
 @router.post("/Groups")
-async def create_group(request: Request, token: str = Depends(auth.verify_token)):
-    body = await request.json()
-    log(LogLevel.INFO, f"Group created: \n{body}")
-    return JSONResponse(status_code=201, content="testing")
+async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)):
+    ### Code To Run ###
+    log(LogLevel.INFO, f"Group created: {group.model_dump()}")
+    return JSONResponse(status_code=201, content=group.model_dump())
 
 # Update Group Membership
 @router.patch("/Groups/{group_id}", tags=["SCIM"])
