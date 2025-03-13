@@ -9,6 +9,7 @@ from utils import log, LogLevel
 SCIM_USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User"
 SCIM_GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group"
 
+
 class SCIMName(BaseModel):
     formatted: Optional[str]
     familyName: Optional[str]
@@ -17,10 +18,12 @@ class SCIMName(BaseModel):
     honorificPrefix: Optional[str] = None
     honorificSuffix: Optional[str] = None
 
+
 class SCIMEmail(BaseModel):
     value: str
     type: Optional[str] = None
     primary: Optional[bool] = None
+
 
 # Models
 class SCIMUser(BaseModel):
@@ -91,19 +94,17 @@ async def service_provider_config():
 @router.post("/Users")
 async def create_user(user: SCIMUser, token: str = Depends(auth.verify_token)):
     ### Code To Run ###
-    try:
-        log(LogLevel.INFO, f"User created: {user.model_dump()}")
-        return JSONResponse(status_code=201, content=user.model_dump())
-    except Exception as e:
-        log(LogLevel.ERROR, f"Error creating user: {e}")
-        return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
+    log(LogLevel.DEBUG, f"User created: {user.model_dump()}")
+    log(LogLevel.INFO, f"SCIM User POST: {user.userName}")
+    return JSONResponse(status_code=201, content={"id": user.externalId, **user.model_dump()})
 
 
 # Update User
 @router.put("/Users/{userId}")
 async def update_user(user_id: str, update_data: SCIMUserUpdate, token: str = Depends(auth.verify_token)):
     ### Code To Run ###
-    log(LogLevel.INFO, f"User updated: {user_id} -> {update_data.model_dump()}")
+    log(LogLevel.DEBUG, f"User updated: {user_id} -> {update_data.model_dump()}")
+    log(LogLevel.INFO, f"SCIM User PUT: {user_id}")
     return {update_data}
 
 
@@ -118,8 +119,10 @@ async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
 @router.post("/Groups")
 async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)):
     ### Code To Run ###
-    log(LogLevel.INFO, f"Group created: {group.model_dump()}")
-    return JSONResponse(status_code=201, content=group.model_dump())
+    log(LogLevel.DEBUG, f"Group created: {group.model_dump()}")
+    log(LogLevel.INFO, f"SCIM Group POST: {group.displayName}")
+    return JSONResponse(status_code=201, content={"id": group.externalId, **group.model_dump()})
+
 
 # Update Group Membership
 @router.patch("/Groups/{group_id}", tags=["SCIM"])
