@@ -125,37 +125,45 @@ async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)
 
 
 # Update Group Membership
-@router.patch("/Groups/{group_id}", tags=["SCIM"])
-async def modify_group_users(
-        group_id: str = Path(..., title="Group ID"),
-        patch_request: SCIMPatchRequest = None,
-        token: str = Depends(auth.verify_token)
-):
-    # Validate SCIM Schema
-    if SCIM_GROUP_SCHEMA not in patch_request.schemas:
-        raise HTTPException(status_code=400, detail="Invalid SCIM schema")
+# @router.patch("/Groups/{group_id}", tags=["SCIM"])
+# async def modify_group_users(
+#         group_id: str = Path(..., title="Group ID"),
+#         patch_request: SCIMPatchRequest = None,
+#         token: str = Depends(auth.verify_token)
+# ):
+#     # Validate SCIM Schema
+#     if SCIM_GROUP_SCHEMA not in patch_request.schemas:
+#         raise HTTPException(status_code=400, detail="Invalid SCIM schema")
+#
+#     for operation in patch_request.Operations:
+#         if operation.path != "members":
+#             raise HTTPException(status_code=400, detail="Only 'members' modifications are supported")
+#
+#         for member in operation.value:
+#             user_id = member.get("value")
+#             if not user_id:
+#                 raise HTTPException(status_code=400, detail="Each member must have a 'value' (user ID)")
+#
+#             if operation.op == "add":
+#                 ### Code To Run ###
+#                 log(LogLevel.INFO, f"Adding user {user_id} to group {group_id}")
+#
+#             elif operation.op == "remove":
+#                 ### Code To Run ###
+#                 log(LogLevel.INFO, f"Removing user {user_id} from group {group_id}")
+#
+#             else:
+#                 raise HTTPException(status_code=400, detail="Unsupported operation")
+#
+#     return {"message": "Group updated successfully"}
 
-    for operation in patch_request.Operations:
-        if operation.path != "members":
-            raise HTTPException(status_code=400, detail="Only 'members' modifications are supported")
-
-        for member in operation.value:
-            user_id = member.get("value")
-            if not user_id:
-                raise HTTPException(status_code=400, detail="Each member must have a 'value' (user ID)")
-
-            if operation.op == "add":
-                ### Code To Run ###
-                log(LogLevel.INFO, f"Adding user {user_id} to group {group_id}")
-
-            elif operation.op == "remove":
-                ### Code To Run ###
-                log(LogLevel.INFO, f"Removing user {user_id} from group {group_id}")
-
-            else:
-                raise HTTPException(status_code=400, detail="Unsupported operation")
-
-    return {"message": "Group updated successfully"}
+# Debug Patch Log (use request.json() to get the data)
+@router.patch("/Groups/{group_id}")
+async def modify_group_users(group_id: str, request: Request, token: str = Depends(auth.verify_token)):
+    data = await request.json()
+    log(LogLevel.INFO, f"SCIM Group PATCH: {group_id}")
+    log(LogLevel.DEBUG, f"Group Patch Request: {data}")
+    return JSONResponse(status_code=204, content={})
 
 
 # Delete Group
