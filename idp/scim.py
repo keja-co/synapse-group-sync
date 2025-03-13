@@ -9,14 +9,29 @@ from utils import log, LogLevel
 SCIM_USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User"
 SCIM_GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group"
 
+class SCIMName(BaseModel):
+    formatted: Optional[str]
+    familyName: Optional[str]
+    givenName: Optional[str]
+    middleName: Optional[str]
+    honorificPrefix: Optional[str]
+    honorificSuffix: Optional[str]
+
+class SCIMEmail(BaseModel):
+    value: str
+    type: Optional[str]
+    primary: Optional[bool]
+
 # Models
 class SCIMUser(BaseModel):
     schemas: List[str] = Field(default=[SCIM_USER_SCHEMA])
     userName: str = Field(..., title="Unique identifier for the user")
-    name: Dict[str, str] = Field(..., title="User's name details")
-    emails: List[Dict[str, str]] = Field(..., title="User's email addresses")
+    name: SCIMName = Field(..., title="User's name")
+    displayName: str = Field(..., title="User's display name")
+    emails: List[SCIMEmail] = Field(..., title="User's email addresses")
     active: bool = Field(default=True, title="User active status")
     externalId: Optional[str] = Field(None, title="External identifier for the user")
+
 
 class SCIMUserUpdate(BaseModel):
     schemas: List[str] = [SCIM_USER_SCHEMA]
@@ -24,16 +39,19 @@ class SCIMUserUpdate(BaseModel):
     name: Optional[Dict[str, str]] = None
     emails: Optional[List[Dict[str, str]]] = None
 
+
 class SCIMGroup(BaseModel):
     schemas: List[str] = [SCIM_GROUP_SCHEMA]
     id: str = Field(..., title="Unique identifier for the group")
     displayName: Optional[str] = Field(None, title="Group's display name")
     members: Optional[List[Dict[str, str]]] = None
 
+
 class PatchOperation(BaseModel):
     op: str
     path: Optional[str] = "members"
     value: Optional[List[Dict[str, Any]]] = None
+
 
 class SCIMPatchRequest(BaseModel):
     schemas: List[str]
@@ -41,6 +59,7 @@ class SCIMPatchRequest(BaseModel):
 
 
 router = APIRouter()
+
 
 @router.get("/ServiceProviderConfig")
 async def service_provider_config():
@@ -67,22 +86,18 @@ async def service_provider_config():
         }
     )
 
+
 # Create User
 @router.post("/Users")
-# async def create_user(user: SCIMUser, token: str = Depends(auth.verify_token)):
-#     ### Code To Run ###
-#     try:
-#         log(LogLevel.INFO, f"User created: {user.model_dump()}")
-#         return JSONResponse(status_code=201, content=user.model_dump())
-#     except Exception as e:
-#         log(LogLevel.ERROR, f"Error creating user: {e}")
-#         return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
+async def create_user(user: SCIMUser, token: str = Depends(auth.verify_token)):
+    ### Code To Run ###
+    try:
+        log(LogLevel.INFO, f"User created: {user.model_dump()}")
+        return JSONResponse(status_code=201, content=user.model_dump())
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error creating user: {e}")
+        return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
 
-# Temporary debug code
-@router.post("/Users")
-async def create_user(request: Request, token: str = Depends(auth.verify_token)):
-    body = await request.json()
-    log(LogLevel.INFO, f"User created: \n{body}")
 
 # Update User
 @router.put("/Users/{userId}")
@@ -98,6 +113,7 @@ async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
     log(LogLevel.INFO, f"User removed: {user_id}")
     return JSONResponse(status_code=204, content={})
 
+
 # Create Group
 @router.post("/Groups")
 async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)):
@@ -105,12 +121,13 @@ async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)
     log(LogLevel.INFO, f"Group created: {group.model_dump()}")
     return JSONResponse(status_code=201, content=group.model_dump())
 
+
 # Update Group Membership
 @router.patch("/Groups/{group_id}", tags=["SCIM"])
 async def modify_group_users(
-    group_id: str = Path(..., title="Group ID"),
-    patch_request: SCIMPatchRequest = None,
-    token: str = Depends(auth.verify_token)
+        group_id: str = Path(..., title="Group ID"),
+        patch_request: SCIMPatchRequest = None,
+        token: str = Depends(auth.verify_token)
 ):
     # Validate SCIM Schema
     if SCIM_GROUP_SCHEMA not in patch_request.schemas:
@@ -137,6 +154,7 @@ async def modify_group_users(
                 raise HTTPException(status_code=400, detail="Unsupported operation")
 
     return {"message": "Group updated successfully"}
+
 
 # Delete Group
 @router.delete("/Groups/{groupId}")
