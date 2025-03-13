@@ -118,10 +118,10 @@ async def create_user(user: SCIMUser, token: str = Depends(auth.verify_token)):
 # Debug Update User
 @router.put("/Users/{userId}")
 async def update_user(user_id: str, request: Request, token: str = Depends(auth.verify_token)):
-    update_data = await request.json()
+    update_data = await request.body()
     log(LogLevel.INFO, f"SCIM User PUT: {user_id}")
     log(LogLevel.INFO, f"SCIM User PUT: {update_data}")
-    return JSONResponse(status_code=200, content={"id": user_id})
+    return JSONResponse(status_code=200, content={})
 
 @router.delete("/Users/{userId}")
 async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
@@ -150,10 +150,10 @@ async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)
 # Debug Update Group
 @router.put("/Groups/{groupId}")
 async def update_group(group_id: str, request: Request, token: str = Depends(auth.verify_token)):
-    update_data = await request.json()
+    update_data = await request.body()
     log(LogLevel.INFO, f"SCIM Group PUT: {group_id}")
     log(LogLevel.INFO, f"SCIM Group PUT: {update_data}")
-    return JSONResponse(status_code=200, content={"id": group_id})
+    return JSONResponse(status_code=200, content={})
 
 # # Update Group Membership
 # @router.patch("/Groups/{group_id}", tags=["SCIM"])
