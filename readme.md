@@ -3,6 +3,9 @@
 [![FastAPI](https://img.shields.io/badge/Framework-FastAPI-green)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
+[![Hits-of-Code](https://hitsofcode.com/github/keja-co/synapse-scim?branch=main)](https://hitsofcode.com/github/keja-co/synapse-scim/view?branch=main)
+[![LOC](https://tokei.rs/b1/github/keja-co/synapse-scim)](https://github.com/keja-co/synapse-scim).
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/ca0469df52fc4a3ab9ba4705c38f3260)](https://app.codacy.com/gh/keja-co/synapse-scim/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 **Note:** This relies heavily on Synapse Admin APIs. This will **not** work with other home servers.
 <br>
