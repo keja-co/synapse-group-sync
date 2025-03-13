@@ -27,6 +27,10 @@ MATRIX_SERVER_NAME=os.environ.get("MATRIX_SERVER_NAME")
 if not MATRIX_SERVER_NAME:
     raise RuntimeError("MATRIX_SERVER_NAME environment variable is not set")
 
+DATA_DIR=os.environ.get("DATA_DIR")
+if not DATA_DIR:
+    raise RuntimeError("DATA_DIR environment variable is not set")
+
 AUTHENTIK_API_URL=os.environ.get("AUTHENTIK_API_URL")
 AUTHENTIK_TOKEN=os.environ.get("AUTHENTIK_TOKEN")
 

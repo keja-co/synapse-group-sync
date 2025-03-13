@@ -1,7 +1,12 @@
+import json
+import os
+
 from fastapi import APIRouter, HTTPException, Path, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import List, Literal, Dict, Any, Optional
+
+from config import DATA_DIR
 from utilities import auth
 from utils import log, LogLevel
 
@@ -9,7 +14,7 @@ from utils import log, LogLevel
 SCIM_USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User"
 SCIM_GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group"
 
-
+# SCIM Models
 class SCIMName(BaseModel):
     formatted: Optional[str]
     familyName: Optional[str]
@@ -52,22 +57,67 @@ class SCIMGroup(BaseModel):
     members: Optional[List[Dict[str, str]]] = None
     externalId: Optional[str] = Field(None, title="External identifier for the group")
 
+
 class SCIMGroupUpdate(BaseModel):
     schemas: List[str] = [SCIM_GROUP_SCHEMA]
     displayName: Optional[str] = Field(None, title="Group's display name")
     members: Optional[List[Dict[str, str]]] = None
     externalId: Optional[str] = Field(None, title="External identifier for the group")
 
-# class PatchOperation(BaseModel):
-#     op: str
-#     path: Optional[str] = "members"
-#     value: Optional[List[Dict[str, Any]]] = None
+# File Stores
+user_file_location = f"{DATA_DIR}/users.json"
+group_file_location = f"{DATA_DIR}/groups.json"
 
+# Create Files if they don't exist
+if not os.path.exists(user_file_location):
+    with open(user_file_location, "w") as f:
+        json.dump({}, f)
 
-# class SCIMPatchRequest(BaseModel):
-#     schemas: List[str]
-#     Operations: List[PatchOperation]
+if not os.path.exists(group_file_location):
+    with open(group_file_location, "w") as f:
+        json.dump({}, f)
 
+# Database Functions
+
+def db_get_user(user_id: str):
+    with open(user_file_location, "r") as f:
+        users = json.load(f)
+    return users.get(user_id, None)
+
+def db_get_group(group_id: str):
+    with open(group_file_location, "r") as f:
+        groups = json.load(f)
+    return groups.get(group_id, None)
+
+def db_create_user(user: SCIMUser):
+    with open(user_file_location, "r") as f:
+        users = json.load(f)
+    users[user.externalId] = user.model_dump()
+    with open(user_file_location, "w") as f:
+        json.dump(users, f)
+
+def db_create_group(group: SCIMGroup):
+    with open(group_file_location, "r") as f:
+        groups = json.load(f)
+    groups[group.externalId] = group.model_dump()
+    with open(group_file_location, "w") as f:
+        json.dump(groups, f)
+
+def db_update_user(user_id: str, update_data: SCIMUserUpdate):
+    with open(user_file_location, "r") as f:
+        users = json.load(f)
+    users[user_id] = update_data.model_dump()
+    with open(user_file_location, "w") as f:
+        json.dump(users, f)
+
+def db_update_group(group_id: str, update_data: SCIMGroupUpdate):
+    with open(group_file_location, "r") as f:
+        groups = json.load(f)
+    groups[group_id] = update_data.model_dump()
+    with open(group_file_location, "w") as f:
+        json.dump(groups, f)
+
+# SCIM Routes
 
 router = APIRouter()
 
@@ -101,23 +151,40 @@ async def service_provider_config():
 # Create User
 @router.post("/Users")
 async def create_user(user: SCIMUser, token: str = Depends(auth.verify_token)):
-    ### Code To Run ###
+
     log(LogLevel.DEBUG, f"User created: {user.model_dump()}")
     log(LogLevel.INFO, f"SCIM User POST: {user.userName}")
+
+    db_create_user(user)
+
     return JSONResponse(status_code=201, content={"id": user.externalId, **user.model_dump()})
 
+
+# Get User
+@router.get("/Users/{user_id}")
+async def get_user(user_id: str, token: str = Depends(auth.verify_token)):
+
+    user = db_get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return JSONResponse(status_code=200, content={"id": user_id, **user})
 
 # Update User
 @router.put("/Users/{user_id}")
 async def update_user(user_id: str, update_data: SCIMUserUpdate, token: str = Depends(auth.verify_token)):
-    ### Code To Run ###
+
     log(LogLevel.DEBUG, f"User updated: {user_id} -> {update_data.model_dump()}")
     log(LogLevel.INFO, f"SCIM User PUT: {user_id}")
+
+    db_update_user(user_id, update_data)
+
     return JSONResponse(status_code=200, content={"id": update_data.externalId, **update_data.model_dump()})
 
-@router.delete("/Users/{userId}")
+
+@router.delete("/Users/{user_id}")
 async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
-    ### Code To Run ###
+
     log(LogLevel.INFO, f"User removed: {user_id}")
     return JSONResponse(status_code=204, content={})
 
@@ -125,57 +192,40 @@ async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
 # Create Group
 @router.post("/Groups")
 async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)):
-    ### Code To Run ###
+
     log(LogLevel.DEBUG, f"Group created: {group.model_dump()}")
     log(LogLevel.INFO, f"SCIM Group POST: {group.displayName}")
+
+    db_create_group(group)
+
     return JSONResponse(status_code=201, content={"id": group.externalId, **group.model_dump()})
 
+
+# Get Group
+@router.get("/Groups/{group_id}")
+async def get_group(group_id: str, token: str = Depends(auth.verify_token)):
+
+    group = db_get_group(group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    return JSONResponse(status_code=200, content={"id": group_id, **group})
 
 # PUT Group
 @router.put("/Groups/{group_id}")
 async def update_group(group_id: str, update_data: SCIMGroupUpdate, token: str = Depends(auth.verify_token)):
-    ### Code To Run ###
+
     log(LogLevel.DEBUG, f"Group updated: {group_id} -> {update_data.model_dump()}")
     log(LogLevel.INFO, f"SCIM Group PUT: {update_data.displayName}")
-    return JSONResponse(status_code=200, content={"id": update_data.externalId, **update_data.model_dump()})
 
-# # Update Group Membership
-# @router.patch("/Groups/{group_id}", tags=["SCIM"])
-# async def modify_group_users(
-#         group_id: str = Path(..., title="Group ID"),
-#         patch_request: SCIMPatchRequest = None,
-#         token: str = Depends(auth.verify_token)
-# ):
-#     # Validate SCIM Schema
-#     if SCIM_GROUP_SCHEMA not in patch_request.schemas:
-#         raise HTTPException(status_code=400, detail="Invalid SCIM schema")
-#
-#     for operation in patch_request.Operations:
-#         if operation.path != "members":
-#             raise HTTPException(status_code=400, detail="Only 'members' modifications are supported")
-#
-#         for member in operation.value:
-#             user_id = member.get("value")
-#             if not user_id:
-#                 raise HTTPException(status_code=400, detail="Each member must have a 'value' (user ID)")
-#
-#             if operation.op == "add":
-#                 ### Code To Run ###
-#                 log(LogLevel.INFO, f"Adding user {user_id} to group {group_id}")
-#
-#             elif operation.op == "remove":
-#                 ### Code To Run ###
-#                 log(LogLevel.INFO, f"Removing user {user_id} from group {group_id}")
-#
-#             else:
-#                 raise HTTPException(status_code=400, detail="Unsupported operation")
-#
-#     return {"message": "Group updated successfully"}
+    db_update_group(group_id, update_data)
+
+    return JSONResponse(status_code=200, content={"id": update_data.externalId, **update_data.model_dump()})
 
 
 # Delete Group
-@router.delete("/Groups/{groupId}")
+@router.delete("/Groups/{group_id}")
 async def delete_group(group_id: str, token: str = Depends(auth.verify_token)):
-    ### Code To Run ###
+
     log(LogLevel.INFO, f"Group deleted: {group_id}")
     return JSONResponse(status_code=204, content={})

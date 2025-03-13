@@ -1,0 +1,13 @@
+name: synapsesync
+services:
+  synapsesync:
+    build: https://github.com/keja-co/synapse-scim.git
+    ports:
+      - 3016:5000
+    env_file: ".env"
+    restart: unless-stopped
+  volumes:
+    - data:/data
+
+volumes:
+  data:
