@@ -13,14 +13,14 @@ class SCIMName(BaseModel):
     formatted: Optional[str]
     familyName: Optional[str]
     givenName: Optional[str]
-    middleName: Optional[str]
-    honorificPrefix: Optional[str]
-    honorificSuffix: Optional[str]
+    middleName: Optional[str] = None
+    honorificPrefix: Optional[str] = None
+    honorificSuffix: Optional[str] = None
 
 class SCIMEmail(BaseModel):
     value: str
-    type: Optional[str]
-    primary: Optional[bool]
+    type: Optional[str] = None
+    primary: Optional[bool] = None
 
 # Models
 class SCIMUser(BaseModel):
@@ -115,12 +115,18 @@ async def delete_user(user_id: str, token: str = Depends(auth.verify_token)):
 
 
 # Create Group
+# @router.post("/Groups")
+# async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)):
+#     ### Code To Run ###
+#     log(LogLevel.INFO, f"Group created: {group.model_dump()}")
+#     return JSONResponse(status_code=201, content=group.model_dump())
+
+
+# Debug log group scim request
 @router.post("/Groups")
 async def create_group(group: SCIMGroup, token: str = Depends(auth.verify_token)):
-    ### Code To Run ###
-    log(LogLevel.INFO, f"Group created: {group.model_dump()}")
-    return JSONResponse(status_code=201, content=group.model_dump())
-
+    log(LogLevel.INFO, f"Group created: \n{Request.body}")
+    return JSONResponse(status_code=201, content="testing")
 
 # Update Group Membership
 @router.patch("/Groups/{group_id}", tags=["SCIM"])
